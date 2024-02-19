@@ -4,9 +4,10 @@ from db import User, engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 from flask import g
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
-
+bcrypt = Bcrypt(app)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 db = SessionLocal()
@@ -97,13 +98,13 @@ def register_user():
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
-
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
     if not all([first_name, last_name, username, email, password]):
         return jsonify({"error": "Missing required fields"}), 400
 
     try:
         db = get_db()
-        new_user = User(first_name=first_name, last_name=last_name, username=username, email=email, password=password)
+        new_user = User(first_name=first_name, last_name=last_name, username=username, email=email, password=hashed_password)
         db.add(new_user)
         db.commit()
         return jsonify({"message": "User registered successfully"}), 201
